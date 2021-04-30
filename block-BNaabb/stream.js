@@ -10,10 +10,10 @@ function handleServer(req, res) {
 
   req.on('end', () => {
     console.log(data);
-  });
-
-  res.write(data, () => {
-    console.log('We are writting data in the file');
+    res.write(data, () => {
+      console.log('We are writting data in the file');
+    });
+    res.end();
   });
 }
 
