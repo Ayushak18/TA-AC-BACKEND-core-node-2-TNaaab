@@ -4,10 +4,8 @@ let fs = require('fs');
 let server = http.createServer(handleServer);
 
 function handleServer(req, res) {
-  //   let ayush = fs.createReadStream('./readme.txt');
-  //   console.log(ayush);
+  fs.createReadStream('./readme.txt').pipe(res);
   //   res.end('THis is from server');
-  //   res.end(ayush);
 }
 
 server.listen(5000, () => {
