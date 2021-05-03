@@ -20,15 +20,21 @@ function handleServer(req, res) {
         // console.log(parsedStringData);
       } else if (req.headers['content-type'] === 'application/json') {
         let parsedJsonData = JSON.parse(data);
-        console.log(parsedJsonData.name);
+        creatingFile(req, res, parsedJsonData);
+        // console.log(parsedJsonData);
       } else {
         res.end(`Data of this type is not supported`);
         // console.log(req.headers);
+      }
+    } else if ((req.method = 'GET')) {
+      if (req.headers['content-type'] === 'application/x-www-form-urlencoded') {
+      } else if (req.headers['content-type'] === 'application/json') {
       }
     }
   });
 }
 
+// Function to create file
 function creatingFile(req, res, parsedStringData) {
   fs.open(`./users/${parsedStringData.name}`, 'wx', (error, fileData) => {
     if (error) {
