@@ -1,60 +1,84 @@
 let http = require('http');
 let fs = require('fs');
 let qs = require('querystring');
+let url = require('url');
 
 let server = http.createServer(handleServer);
 
+let usersPath = __dirname + '/users';
+
+console.log(usersPath);
+
 function handleServer(req, res) {
+  // parsing url and querystring
+  let parsedUrl = url.parse(req.url, true);
+
   let data = '';
   req.on('data', (content) => {
     data = data + content;
   });
 
   req.on('end', () => {
+    //   Handling the creation of username file and adding data to it
     if (req.method === 'POST' && req.url === '/users') {
-      if (req.headers['content-type'] === 'application/x-www-form-urlencoded') {
-        let parsedStringData = qs.parse(data);
-
-        creatingFile(req, res, parsedStringData);
-
-        // console.log(parsedStringData);
-      } else if (req.headers['content-type'] === 'application/json') {
-        let parsedJsonData = JSON.parse(data);
-        creatingFile(req, res, parsedJsonData);
-        // console.log(parsedJsonData);
-      } else {
-        res.end(`Data of this type is not supported`);
-        // console.log(req.headers);
-      }
-    } else if ((req.method = 'GET')) {
-      if (req.headers['content-type'] === 'application/x-www-form-urlencoded') {
-      } else if (req.headers['content-type'] === 'application/json') {
-      }
-    }
-  });
-}
-
-// Function to create file
-function creatingFile(req, res, parsedStringData) {
-  fs.open(`./users/${parsedStringData.name}`, 'wx', (error, fileData) => {
-    if (error) {
-      console.log(error);
-      res.end('User already Exist');
-    } else {
-      fs.writeFile(
-        `./users/${parsedStringData.name}`,
-        JSON.stringify(parsedStringData),
-        (error) => {
+      let username = JSON.parse(data).username;
+      // console.log(username);
+      fs.open(`${usersPath}/${username}.json`, 'wx', (error, fd) => {
+        if (error) {
+          console.log(error, 'Error');
+        } else {
+          fs.writeFile(fd, data, (error) => {
+            if (error) {
+              console.log(error);
+            } else {
+              fs.close(fd, () => {
+                res.end(`${username} is created succecfully`);
+              });
+            }
+          });
+        }
+      });
+      //Handling to get the data from the existing file with username
+    } else if (req.method === 'GET' && parsedUrl.pathname === '/users') {
+      fs.createReadStream(`${usersPath}/${parsedUrl.query.username}.json`).pipe(
+        res
+      );
+      //   Handling updation of user file
+    } else if (req.method === 'PUT' && parsedUrl.pathname === '/users') {
+      let username = JSON.parse(data).username;
+      fs.open(
+        `${usersPath}/${parsedUrl.query.username}.json`,
+        'r+',
+        (error, fd) => {
           if (error) {
-            console.log(error, 'From file writing');
+            console.log(error);
           } else {
-            res.end('You data has been written');
+            fs.truncate(fd, (error) => {
+              if (error) {
+                console.log(error);
+              } else {
+                fs.write(fd, data, (error) => {
+                  if (error) {
+                    console.log(error);
+                  } else {
+                    fs.close(fd, () => {
+                      res.end(`${username} is updated succecfully`);
+                    });
+                  }
+                });
+              }
+            });
           }
         }
       );
-
-      fs.close(10, () => {
-        console.log('File closed');
+      // Handling deletion of a file
+    } else if (req.method === 'DELETE' && parsedUrl.pathname === '/users') {
+      fs.unlink(`${usersPath}/${parsedUrl.query.username}.json`, (error) => {
+        if (error) {
+          console.log(error);
+        } else {
+          res.end(`${parsedUrl.query.username} has been deleted`);
+        }
       });
     }
   });
